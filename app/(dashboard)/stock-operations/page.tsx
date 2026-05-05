@@ -1,0 +1,31 @@
+'use client'
+
+import { StockAdjustmentForm } from '@/components/stock-ops/stock-adjustment-form'
+import { AdjustmentHistoryTable } from '@/components/stock-ops/adjustment-history-table'
+
+export default function StockOperationsPage() {
+  const handleAdjustmentSubmit = (data: any) => {
+    console.log('Stock adjustment submitted:', data)
+    // In a real app, this would send data to the backend
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">Stock Operations</h1>
+        <p className="text-muted-foreground mt-1">Add, remove, or transfer inventory items</p>
+      </div>
+
+      {/* Form and History */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1">
+          <StockAdjustmentForm onSubmit={handleAdjustmentSubmit} />
+        </div>
+        <div className="lg:col-span-2">
+          <AdjustmentHistoryTable />
+        </div>
+      </div>
+    </div>
+  )
+}
