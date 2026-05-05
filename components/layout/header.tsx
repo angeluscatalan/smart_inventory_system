@@ -21,10 +21,11 @@ export function Header() {
     router.push('/login')
   }
 
-  const getInitials = (name: string) => {
-    return name
+  const getInitials = (name?: string) => {
+    return (name || '')
       .split(' ')
-      .map((n) => n[0])
+      .filter(Boolean)
+      .map((n) => n[0] || '')
       .join('')
       .toUpperCase()
       .slice(0, 2)

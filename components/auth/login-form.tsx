@@ -93,7 +93,6 @@ export function LoginForm() {
         <Card className="border border-border shadow-lg">
           <div className="p-8">
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-foreground mb-2">Maligayang Pagbabalik!</h1>
               <p className="text-muted-foreground">InvSys PH - Smart Inventory System</p>
             </div>
 

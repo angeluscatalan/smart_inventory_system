@@ -39,6 +39,7 @@ export function Sidebar() {
   const { user, logout } = useAuth()
 
   const userRole = user?.role || 'staff'
+  const formattedUserRole = (user?.role || 'staff').replace('-', ' ')
   const permissions = getPagePermissions(userRole)
 
   const visibleItems = navItems.filter((item) => permissions[item.permissionKey])
@@ -78,7 +79,7 @@ export function Sidebar() {
         {user && (
           <div className="px-4 py-2 mb-2">
             <p className="text-sm font-medium text-sidebar-foreground truncate">{user.fullName}</p>
-            <p className="text-xs text-sidebar-foreground/60 capitalize">{user.role.replace('-', ' ')}</p>
+            <p className="text-xs text-sidebar-foreground/60 capitalize">{formattedUserRole}</p>
             {user.branch !== 'all' && (
               <p className="text-xs text-sidebar-foreground/50">{user.branch}</p>
             )}
