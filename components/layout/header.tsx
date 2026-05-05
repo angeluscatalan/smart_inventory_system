@@ -13,13 +13,32 @@ import {
 import { useAuth } from '@/lib/auth-context'
 
 export function Header() {
-  const { logout } = useAuth()
+  const { user, logout } = useAuth()
   const router = useRouter()
 
   const handleLogout = () => {
     logout()
     router.push('/login')
   }
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }
+
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case 'admin': return 'Administrator'
+      case 'branch-manager': return 'Branch Manager'
+      case 'staff': return 'Staff'
+      default: return role
+    }
+  }
+
   return (
     <div className="dashboard-header">
       {/* Search Bar */}
@@ -44,11 +63,11 @@ export function Header() {
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-secondary transition-colors">
               <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-medium">
-                JD
+                {user ? getInitials(user.fullName) : '??'}
               </div>
               <div className="hidden sm:block text-sm">
-                <p className="font-medium text-foreground">John Doe</p>
-                <p className="text-xs text-muted-foreground">Admin</p>
+                <p className="font-medium text-foreground">{user?.fullName || 'Unknown'}</p>
+                <p className="text-xs text-muted-foreground">{user ? getRoleLabel(user.role) : ''}</p>
               </div>
               <ChevronDown className="w-4 h-4 text-muted-foreground" />
             </button>
@@ -59,7 +78,7 @@ export function Header() {
               <span>Profile</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem 
+            <DropdownMenuItem
               className="flex items-center gap-2 cursor-pointer text-destructive"
               onClick={handleLogout}
             >

@@ -13,22 +13,37 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { mockInventoryItems, mockBranches } from '@/lib/mock-data'
+import { useAuth } from '@/lib/auth-context'
+import { canTransferStock as checkCanTransfer, canAccessAllBranches } from '@/lib/permissions'
 
 interface StockAdjustmentFormProps {
   onSubmit?: (data: any) => void
 }
 
 export function StockAdjustmentForm({ onSubmit }: StockAdjustmentFormProps) {
+  const { user } = useAuth()
+  const userCanTransfer = user?.role ? checkCanTransfer(user.role) : false
+  const isAdmin = user?.role ? canAccessAllBranches(user.role) : false
+
   const [adjustmentType, setAdjustmentType] = useState<'add' | 'remove' | 'transfer'>('add')
   const [selectedItem, setSelectedItem] = useState('')
   const [quantity, setQuantity] = useState('')
-  const [fromBranch, setFromBranch] = useState('')
+  const [fromBranch, setFromBranch] = useState(isAdmin ? '' : (user?.branch || ''))
   const [toBranch, setToBranch] = useState('')
   const [reason, setReason] = useState('')
 
+  // Filter items based on user branch
+  const availableItems = isAdmin
+    ? mockInventoryItems
+    : mockInventoryItems.filter((item) => item.branch === user?.branch)
+
+  const adjustmentTypes = userCanTransfer
+    ? (['add', 'remove', 'transfer'] as const)
+    : (['add', 'remove'] as const)
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!selectedItem || !quantity || !reason) {
       alert('Please fill in all required fields')
       return
@@ -61,7 +76,7 @@ export function StockAdjustmentForm({ onSubmit }: StockAdjustmentFormProps) {
     setAdjustmentType('add')
     setSelectedItem('')
     setQuantity('')
-    setFromBranch('')
+    setFromBranch(isAdmin ? '' : (user?.branch || ''))
     setToBranch('')
     setReason('')
   }
@@ -70,24 +85,27 @@ export function StockAdjustmentForm({ onSubmit }: StockAdjustmentFormProps) {
     <Card>
       <CardHeader>
         <CardTitle>Stock Adjustment</CardTitle>
-        <CardDescription>Add, remove, or transfer inventory items</CardDescription>
+        <CardDescription>
+          {userCanTransfer
+            ? 'Add, remove, or transfer inventory items'
+            : 'Add or remove inventory items'}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Adjustment Type */}
           <div>
             <label className="text-sm font-medium">Adjustment Type</label>
-            <div className="grid grid-cols-3 gap-3 mt-2">
-              {(['add', 'remove', 'transfer'] as const).map((type) => (
+            <div className={`grid gap-3 mt-2 ${userCanTransfer ? 'grid-cols-3' : 'grid-cols-2'}`}>
+              {adjustmentTypes.map((type) => (
                 <button
                   key={type}
                   type="button"
                   onClick={() => setAdjustmentType(type)}
-                  className={`p-3 rounded-lg border-2 transition-colors capitalize ${
-                    adjustmentType === type
+                  className={`p-3 rounded-lg border-2 transition-colors capitalize ${adjustmentType === type
                       ? 'border-primary bg-primary/5'
                       : 'border-border hover:border-primary/50'
-                  }`}
+                    }`}
                 >
                   {type}
                 </button>
@@ -103,7 +121,7 @@ export function StockAdjustmentForm({ onSubmit }: StockAdjustmentFormProps) {
                 <SelectValue placeholder="Choose an item..." />
               </SelectTrigger>
               <SelectContent>
-                {mockInventoryItems.map((item) => (
+                {availableItems.map((item) => (
                   <SelectItem key={item.id} value={item.id}>
                     {item.name} ({item.sku})
                   </SelectItem>
@@ -124,22 +142,26 @@ export function StockAdjustmentForm({ onSubmit }: StockAdjustmentFormProps) {
             />
           </div>
 
-          {/* Branch Selection */}
+          {/* Branch Selection - Only for admin */}
           {adjustmentType !== 'transfer' && (
             <div>
               <label className="text-sm font-medium block mb-2">Branch *</label>
-              <Select value={fromBranch} onValueChange={setFromBranch}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select branch..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {mockBranches.map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id}>
-                      {branch.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {isAdmin ? (
+                <Select value={fromBranch} onValueChange={setFromBranch}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select branch..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mockBranches.map((branch) => (
+                      <SelectItem key={branch.id} value={branch.name}>
+                        {branch.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input value={user?.branch || ''} disabled className="bg-muted" />
+              )}
             </div>
           )}
 
@@ -148,18 +170,22 @@ export function StockAdjustmentForm({ onSubmit }: StockAdjustmentFormProps) {
             <>
               <div>
                 <label className="text-sm font-medium block mb-2">From Branch *</label>
-                <Select value={fromBranch} onValueChange={setFromBranch}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select source branch..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {mockBranches.map((branch) => (
-                      <SelectItem key={branch.id} value={branch.id}>
-                        {branch.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {isAdmin ? (
+                  <Select value={fromBranch} onValueChange={setFromBranch}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select source branch..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mockBranches.map((branch) => (
+                        <SelectItem key={branch.id} value={branch.name}>
+                          {branch.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={user?.branch || ''} disabled className="bg-muted" />
+                )}
               </div>
               <div>
                 <label className="text-sm font-medium block mb-2">To Branch *</label>
@@ -168,11 +194,13 @@ export function StockAdjustmentForm({ onSubmit }: StockAdjustmentFormProps) {
                     <SelectValue placeholder="Select destination branch..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {mockBranches.map((branch) => (
-                      <SelectItem key={branch.id} value={branch.id}>
-                        {branch.name}
-                      </SelectItem>
-                    ))}
+                    {mockBranches
+                      .filter((branch) => branch.name !== (isAdmin ? fromBranch : user?.branch))
+                      .map((branch) => (
+                        <SelectItem key={branch.id} value={branch.name}>
+                          {branch.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>

@@ -1,10 +1,13 @@
 'use client'
 
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Plus, Edit2, Trash2, Mail, LogIn } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { mockUsers } from '@/lib/mock-data'
+import { useAuth } from '@/lib/auth-context'
 
 const roleConfig = {
   admin: { label: 'Admin', color: 'bg-primary/10 text-primary' },
@@ -13,8 +16,19 @@ const roleConfig = {
 }
 
 export default function UserManagementPage() {
+  const { user } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (user && user.role !== 'admin') {
+      router.push('/')
+    }
+  }, [user, router])
+
+  if (!user || user.role !== 'admin') return null
+
   const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
+    return new Date(date).toLocaleDateString('en-PH', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -101,9 +115,8 @@ export default function UserManagementPage() {
                       </TableCell>
                       <TableCell className="text-sm">{user.assignedBranch}</TableCell>
                       <TableCell>
-                        <span className={`status-badge ${
-                          user.status === 'active' ? 'status-normal' : 'status-inactive'
-                        }`}>
+                        <span className={`status-badge ${user.status === 'active' ? 'status-normal' : 'status-inactive'
+                          }`}>
                           {user.status === 'active' ? 'Active' : 'Inactive'}
                         </span>
                       </TableCell>

@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Filter } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,8 +13,20 @@ import {
 } from '@/components/ui/select'
 import { AlertList } from '@/components/notifications/alert-list'
 import { mockAlerts } from '@/lib/mock-data'
+import { useAuth } from '@/lib/auth-context'
 
 export default function NotificationsPage() {
+  const { user } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (user && user.role !== 'admin') {
+      router.push('/')
+    }
+  }, [user, router])
+
+  if (!user || user.role !== 'admin') return null
+
   const criticalCount = mockAlerts.filter(a => a.severity === 'critical').length
   const warningCount = mockAlerts.filter(a => a.severity === 'warning').length
   const infoCount = mockAlerts.filter(a => a.severity === 'info').length

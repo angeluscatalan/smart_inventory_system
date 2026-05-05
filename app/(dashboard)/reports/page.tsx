@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Download, Filter, TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -14,26 +15,55 @@ import {
 } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { mockInventoryItems, mockBranches } from '@/lib/mock-data'
+import { useAuth } from '@/lib/auth-context'
+import { canViewReportPreview, canAccessAllBranches, canAccessPage } from '@/lib/permissions'
 
 export default function ReportsPage() {
+  const { user } = useAuth()
+  const router = useRouter()
+  const isAdmin = user?.role ? canAccessAllBranches(user.role) : false
+  const showPreview = user?.role ? canViewReportPreview(user.role) : false
+
+  // Redirect staff (no reports access)
+  useEffect(() => {
+    if (user && !canAccessPage(user.role, 'reports')) {
+      router.push('/')
+    }
+  }, [user, router])
+
+  if (user && !canAccessPage(user.role, 'reports')) return null
+
   const [reportType, setReportType] = useState('inventory')
-  const [selectedBranch, setSelectedBranch] = useState('all')
+  const [selectedBranch, setSelectedBranch] = useState(isAdmin ? 'all' : (user?.branch || ''))
+
+  // Filter items based on branch scope
+  const filteredItems = isAdmin && selectedBranch === 'all'
+    ? mockInventoryItems
+    : mockInventoryItems.filter((item) => item.branch === (isAdmin ? selectedBranch : user?.branch))
 
   // Calculate some report metrics
-  const totalValue = mockInventoryItems.reduce((sum, item) => sum + (item.quantity * 150), 0)
-  const lowStockValue = mockInventoryItems
+  const totalValue = filteredItems.reduce((sum, item) => sum + (item.quantity * item.price), 0)
+  const lowStockValue = filteredItems
     .filter(i => i.status === 'low-stock')
-    .reduce((sum, item) => sum + (item.quantity * 150), 0)
-  const expiringValue = mockInventoryItems
+    .reduce((sum, item) => sum + (item.quantity * item.price), 0)
+  const expiringValue = filteredItems
     .filter(i => i.status === 'expiring')
-    .reduce((sum, item) => sum + (item.quantity * 150), 0)
+    .reduce((sum, item) => sum + (item.quantity * item.price), 0)
+
+  const formatPeso = (value: number) => {
+    return `₱${value.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  }
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground">Reports</h1>
-        <p className="text-muted-foreground mt-1">Generate and export inventory reports</p>
+        <p className="text-muted-foreground mt-1">
+          {isAdmin
+            ? 'Generate and export inventory reports'
+            : `Reports for ${user?.branch}`}
+        </p>
       </div>
 
       {/* Report Filters */}
@@ -60,19 +90,23 @@ export default function ReportsPage() {
 
             <div>
               <label className="text-sm font-medium block mb-2">Branch</label>
-              <Select value={selectedBranch} onValueChange={setSelectedBranch}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Branches</SelectItem>
-                  {mockBranches.map(branch => (
-                    <SelectItem key={branch.id} value={branch.id}>
-                      {branch.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {isAdmin ? (
+                <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Branches</SelectItem>
+                    {mockBranches.map(branch => (
+                      <SelectItem key={branch.id} value={branch.name}>
+                        {branch.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input value={user?.branch || ''} disabled className="bg-muted" />
+              )}
             </div>
 
             <div>
@@ -106,8 +140,10 @@ export default function ReportsPage() {
             <CardTitle className="text-sm font-medium">Total Inventory Value</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">${(totalValue / 1000).toFixed(1)}K</p>
-            <p className="text-xs text-muted-foreground mt-1">All items combined</p>
+            <p className="text-2xl font-bold">{formatPeso(totalValue)}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {isAdmin && selectedBranch === 'all' ? 'All items combined' : `Items in ${isAdmin ? selectedBranch : user?.branch}`}
+            </p>
           </CardContent>
         </Card>
 
@@ -116,7 +152,7 @@ export default function ReportsPage() {
             <CardTitle className="text-sm font-medium">Low Stock Value</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-status-warning">${(lowStockValue / 1000).toFixed(1)}K</p>
+            <p className="text-2xl font-bold text-status-warning">{formatPeso(lowStockValue)}</p>
             <p className="text-xs text-muted-foreground mt-1">Needs reordering</p>
           </CardContent>
         </Card>
@@ -126,55 +162,56 @@ export default function ReportsPage() {
             <CardTitle className="text-sm font-medium">At Risk Value</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-status-critical">${(expiringValue / 1000).toFixed(1)}K</p>
+            <p className="text-2xl font-bold text-status-critical">{formatPeso(expiringValue)}</p>
             <p className="text-xs text-muted-foreground mt-1">Expiring soon</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Sample Report Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Inventory Report Preview</CardTitle>
-          <CardDescription>Sample data from current filters</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Item</TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead className="text-right">Quantity</TableHead>
-                  <TableHead className="text-right">Estimated Value</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {mockInventoryItems.slice(0, 5).map(item => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-medium">{item.name}</TableCell>
-                    <TableCell className="text-sm">{item.sku}</TableCell>
-                    <TableCell className="text-right">{item.quantity}</TableCell>
-                    <TableCell className="text-right font-medium">
-                      ${(item.quantity * 150).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <span className={`status-badge ${
-                        item.status === 'normal' ? 'status-normal' :
-                        item.status === 'low-stock' ? 'status-warning' :
-                        'status-critical'
-                      }`}>
-                        {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-                      </span>
-                    </TableCell>
+      {/* Sample Report Table - Only for admin (preview) */}
+      {showPreview && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Inventory Report Preview</CardTitle>
+            <CardDescription>Sample data from current filters</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Item</TableHead>
+                    <TableHead>SKU</TableHead>
+                    <TableHead className="text-right">Quantity</TableHead>
+                    <TableHead className="text-right">Estimated Value</TableHead>
+                    <TableHead>Status</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {filteredItems.slice(0, 5).map(item => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell className="text-sm">{item.sku}</TableCell>
+                      <TableCell className="text-right">{item.quantity}</TableCell>
+                      <TableCell className="text-right font-medium">
+                        {formatPeso(item.quantity * item.price)}
+                      </TableCell>
+                      <TableCell>
+                        <span className={`status-badge ${item.status === 'normal' ? 'status-normal' :
+                          item.status === 'low-stock' ? 'status-warning' :
+                            'status-critical'
+                          }`}>
+                          {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

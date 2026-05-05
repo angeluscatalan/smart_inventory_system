@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Download, Filter } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -14,6 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { mockActivities } from '@/lib/mock-data'
+import { useAuth } from '@/lib/auth-context'
 
 const actionTypeColors = {
   Restocked: 'bg-status-normal/10 text-status-normal',
@@ -24,6 +26,17 @@ const actionTypeColors = {
 }
 
 export default function AuditLogsPage() {
+  const { user } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (user && user.role !== 'admin') {
+      router.push('/')
+    }
+  }, [user, router])
+
+  if (!user || user.role !== 'admin') return null
+
   const [searchUser, setSearchUser] = useState('')
   const [filterAction, setFilterAction] = useState('all')
 
@@ -152,9 +165,8 @@ export default function AuditLogsPage() {
                     <TableRow key={activity.id}>
                       <TableCell className="font-medium">{activity.user}</TableCell>
                       <TableCell>
-                        <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-                          actionTypeColors[activity.action as keyof typeof actionTypeColors] || 'bg-gray-50 text-gray-700'
-                        }`}>
+                        <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${actionTypeColors[activity.action as keyof typeof actionTypeColors] || 'bg-gray-50 text-gray-700'
+                          }`}>
                           {activity.action}
                         </span>
                       </TableCell>

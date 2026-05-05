@@ -4,10 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 const data = [
-  { branch: 'Main Branch', items: 245, value: 18500 },
-  { branch: 'Downtown', items: 189, value: 14200 },
-  { branch: 'Uptown', items: 156, value: 12800 },
-  { branch: 'East End', items: 78, value: 6300 },
+  { branch: 'Manila', items: 245, value: 18500 },
+  { branch: 'Cebu', items: 189, value: 14200 },
+  { branch: 'Davao', items: 156, value: 12800 },
 ]
 
 export function InventoryByBranchChart() {
@@ -33,7 +32,7 @@ export function InventoryByBranchChart() {
             />
             <Legend wrapperStyle={{ color: 'var(--foreground)' }} />
             <Bar dataKey="items" fill="var(--chart-1)" name="Items (Count)" />
-            <Bar dataKey="value" fill="var(--chart-2)" name="Value ($100s)" />
+            <Bar dataKey="value" fill="var(--chart-2)" name="Value (₱100s)" />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>

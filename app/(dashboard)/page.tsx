@@ -7,20 +7,37 @@ import { StockMovementChart } from '@/components/dashboard/stock-movement-chart'
 import { ExpiringProductsTimeline } from '@/components/dashboard/expiring-products-timeline'
 import { RecentActivityTable } from '@/components/dashboard/recent-activity-table'
 import { mockInventoryItems, mockBranches, mockAlerts } from '@/lib/mock-data'
+import { useAuth } from '@/lib/auth-context'
+import { canAccessAllBranches } from '@/lib/permissions'
 
 export default function Dashboard() {
-  const totalItems = mockInventoryItems.reduce((sum, item) => sum + item.quantity, 0)
-  const lowStockItems = mockInventoryItems.filter((item) => item.status === 'low-stock').length
-  const expiringItems = mockInventoryItems.filter((item) => item.status === 'expiring').length
-  const activeBranches = mockBranches.filter((branch) => branch.status === 'active').length
-  const criticalAlerts = mockAlerts.filter((alert) => alert.severity === 'critical').length
+  const { user } = useAuth()
+  const isAdmin = user?.role ? canAccessAllBranches(user.role) : false
+
+  // Filter data based on user's branch
+  const filteredItems = isAdmin
+    ? mockInventoryItems
+    : mockInventoryItems.filter((item) => item.branch === user?.branch)
+
+  const filteredBranches = isAdmin
+    ? mockBranches
+    : mockBranches.filter((b) => b.name === user?.branch)
+
+  const totalItems = filteredItems.reduce((sum, item) => sum + item.quantity, 0)
+  const lowStockItems = filteredItems.filter((item) => item.status === 'low-stock').length
+  const expiringItems = filteredItems.filter((item) => item.status === 'expiring').length
+  const activeBranches = filteredBranches.filter((branch) => branch.status === 'active').length
+
+  const branchLabel = isAdmin ? 'In all branches' : `${user?.branch}`
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Welcome back! Here's your inventory overview.</p>
+        <p className="text-muted-foreground mt-1">
+          Maligayang pagbabalik, {user?.fullName}! Here&apos;s your inventory overview.
+        </p>
       </div>
 
       {/* KPI Cards */}
@@ -28,7 +45,7 @@ export default function Dashboard() {
         <KPICard
           title="Total Items"
           value={totalItems.toLocaleString()}
-          subtitle="In all branches"
+          subtitle={branchLabel}
           icon={Package}
           color="primary"
           trend={{ value: 12, label: 'vs last month', positive: true }}
@@ -59,11 +76,13 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <InventoryByBranchChart />
-        <StockMovementChart />
-      </div>
+      {/* Charts Row 1 - Admin only */}
+      {isAdmin && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <InventoryByBranchChart />
+          <StockMovementChart />
+        </div>
+      )}
 
       {/* Charts Row 2 & Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

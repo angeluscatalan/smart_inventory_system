@@ -18,6 +18,7 @@ interface SearchFilterBarProps {
   onBranchChange: (branch: string) => void
   onStatusChange: (status: string) => void
   onClear: () => void
+  showBranchFilter?: boolean
 }
 
 export function SearchFilterBar({
@@ -25,6 +26,7 @@ export function SearchFilterBar({
   onBranchChange,
   onStatusChange,
   onClear,
+  showBranchFilter = true,
 }: SearchFilterBarProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedBranch, setSelectedBranch] = useState('all')
@@ -67,19 +69,21 @@ export function SearchFilterBar({
           />
         </div>
 
-        <Select value={selectedBranch} onValueChange={handleBranchChange}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="All Branches" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Branches</SelectItem>
-            {mockBranches.map((branch) => (
-              <SelectItem key={branch.id} value={branch.id}>
-                {branch.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {showBranchFilter && (
+          <Select value={selectedBranch} onValueChange={handleBranchChange}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="All Branches" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Branches</SelectItem>
+              {mockBranches.map((branch) => (
+                <SelectItem key={branch.id} value={branch.name}>
+                  {branch.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
         <Select value={selectedStatus} onValueChange={handleStatusChange}>
           <SelectTrigger className="w-40">

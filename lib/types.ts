@@ -1,8 +1,11 @@
+export type UserRole = 'admin' | 'branch-manager' | 'staff'
+
 export interface InventoryItem {
   id: string
   name: string
   sku: string
   quantity: number
+  price: number
   reorderLevel: number
   expiryDate: Date
   supplier: string

@@ -1,11 +1,26 @@
 'use client'
 
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { BranchTable } from '@/components/branches/branch-table'
 import { mockBranches } from '@/lib/mock-data'
+import { useAuth } from '@/lib/auth-context'
 
 export default function BranchesPage() {
+  const { user } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (user && user.role !== 'admin') {
+      router.push('/')
+    }
+  }, [user, router])
+
+  if (!user || user.role !== 'admin') return null
+
+
   return (
     <div className="space-y-6">
       {/* Page Header */}

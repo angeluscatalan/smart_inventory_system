@@ -2,8 +2,13 @@
 
 import { StockAdjustmentForm } from '@/components/stock-ops/stock-adjustment-form'
 import { AdjustmentHistoryTable } from '@/components/stock-ops/adjustment-history-table'
+import { useAuth } from '@/lib/auth-context'
+import { canTransferStock } from '@/lib/permissions'
 
 export default function StockOperationsPage() {
+  const { user } = useAuth()
+  const userCanTransfer = user?.role ? canTransferStock(user.role) : false
+
   const handleAdjustmentSubmit = (data: any) => {
     console.log('Stock adjustment submitted:', data)
     // In a real app, this would send data to the backend
@@ -14,7 +19,11 @@ export default function StockOperationsPage() {
       {/* Page Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground">Stock Operations</h1>
-        <p className="text-muted-foreground mt-1">Add, remove, or transfer inventory items</p>
+        <p className="text-muted-foreground mt-1">
+          {userCanTransfer
+            ? 'Add, remove, or transfer inventory items'
+            : 'Add or remove inventory items'}
+        </p>
       </div>
 
       {/* Form and History */}
