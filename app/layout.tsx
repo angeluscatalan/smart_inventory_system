@@ -11,7 +11,6 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: 'Smart Inventory System',
   description: 'Professional inventory management dashboard',
-  generator: 'v0.app',
 }
 
 export const viewport: Viewport = {

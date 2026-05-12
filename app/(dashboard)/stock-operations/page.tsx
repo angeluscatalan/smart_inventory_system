@@ -4,14 +4,14 @@ import { StockAdjustmentForm } from '@/components/stock-ops/stock-adjustment-for
 import { AdjustmentHistoryTable } from '@/components/stock-ops/adjustment-history-table'
 import { useAuth } from '@/lib/auth-context'
 import { canTransferStock } from '@/lib/permissions'
+import type { StockAdjustmentPayload } from '@/lib/types'
 
 export default function StockOperationsPage() {
   const { user } = useAuth()
   const userCanTransfer = user?.role ? canTransferStock(user.role) : false
 
-  const handleAdjustmentSubmit = (data: any) => {
-    console.log('Stock adjustment submitted:', data)
-    // In a real app, this would send data to the backend
+  const handleStockAdjustmentSubmit = (payload: StockAdjustmentPayload): void => {
+    // TODO: replace with API call
   }
 
   return (
@@ -29,7 +29,7 @@ export default function StockOperationsPage() {
       {/* Form and History */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
-          <StockAdjustmentForm onSubmit={handleAdjustmentSubmit} />
+          <StockAdjustmentForm onSubmit={handleStockAdjustmentSubmit} />
         </div>
         <div className="lg:col-span-2">
           <AdjustmentHistoryTable />

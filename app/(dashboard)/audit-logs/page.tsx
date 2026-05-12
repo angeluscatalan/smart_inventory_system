@@ -14,8 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { mockActivities } from '@/lib/mock-data'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/lib/auth-context'
+import { fetchActivities, fetchAuditLogStats } from '@/lib/api/activities'
+import type { Activity, AuditLogStats } from '@/lib/types'
 
 const actionTypeColors = {
   Restocked: 'bg-status-normal/10 text-status-normal',
@@ -29,18 +31,38 @@ export default function AuditLogsPage() {
   const { user } = useAuth()
   const router = useRouter()
 
+  const [stats, setStats] = useState<AuditLogStats | null>(null)
+  const [statsLoading, setStatsLoading] = useState(true)
+  const [statsError, setStatsError] = useState(false)
+
+  const [activities, setActivities] = useState<Activity[]>([])
+  const [searchUser, setSearchUser] = useState('')
+  const [filterAction, setFilterAction] = useState('all')
+
   useEffect(() => {
     if (user && user.role !== 'admin') {
       router.push('/')
     }
   }, [user, router])
 
+  useEffect(() => {
+    fetchAuditLogStats()
+      .then(setStats)
+      .catch(() => setStatsError(true))
+      .finally(() => setStatsLoading(false))
+  }, [])
+
+  useEffect(() => {
+    fetchActivities()
+      .then(setActivities)
+      .catch(() => {
+        // silently keep empty array; table shows "No activities found"
+      })
+  }, [])
+
   if (!user || user.role !== 'admin') return null
 
-  const [searchUser, setSearchUser] = useState('')
-  const [filterAction, setFilterAction] = useState('all')
-
-  const filteredActivities = mockActivities.filter(activity => {
+  const filteredActivities = activities.filter(activity => {
     const userMatch = searchUser === '' || activity.user.toLowerCase().includes(searchUser.toLowerCase())
     const actionMatch = filterAction === 'all' || activity.action === filterAction
     return userMatch && actionMatch
@@ -57,7 +79,15 @@ export default function AuditLogsPage() {
     })
   }
 
-  const uniqueActions = [...new Set(mockActivities.map(a => a.action))]
+  const uniqueActions = [...new Set(activities.map(a => a.action))]
+
+  function handleOpenAuditFilters(): void {
+    // TODO: open advanced filter panel
+  }
+
+  function handleExportAuditLogs(): void {
+    // TODO: call export API and trigger file download
+  }
 
   return (
     <div className="space-y-6">
@@ -101,11 +131,11 @@ export default function AuditLogsPage() {
             </div>
 
             <div className="flex items-end gap-2">
-              <Button variant="outline">
+              <Button variant="outline" onClick={handleOpenAuditFilters}>
                 <Filter className="w-4 h-4 mr-2" />
                 More Filters
               </Button>
-              <Button variant="outline">
+              <Button variant="outline" onClick={handleExportAuditLogs}>
                 <Download className="w-4 h-4 mr-2" />
                 Export
               </Button>
@@ -118,19 +148,43 @@ export default function AuditLogsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-card rounded-lg p-4 border border-border">
           <p className="text-sm text-muted-foreground">Total Activities</p>
-          <p className="text-2xl font-bold text-foreground mt-1">{mockActivities.length}</p>
+          <p className="text-2xl font-bold text-foreground mt-1">{activities.length}</p>
         </div>
         <div className="bg-card rounded-lg p-4 border border-border">
           <p className="text-sm text-muted-foreground">Last 24 Hours</p>
-          <p className="text-2xl font-bold text-foreground mt-1">5</p>
+          <p className="text-2xl font-bold text-foreground mt-1">
+            {statsLoading ? (
+              <Skeleton className="h-8 w-12" />
+            ) : statsError ? (
+              '--'
+            ) : (
+              stats!.last24Hours
+            )}
+          </p>
         </div>
         <div className="bg-card rounded-lg p-4 border border-border">
           <p className="text-sm text-muted-foreground">Last Week</p>
-          <p className="text-2xl font-bold text-foreground mt-1">18</p>
+          <p className="text-2xl font-bold text-foreground mt-1">
+            {statsLoading ? (
+              <Skeleton className="h-8 w-12" />
+            ) : statsError ? (
+              '--'
+            ) : (
+              stats!.lastWeek
+            )}
+          </p>
         </div>
         <div className="bg-card rounded-lg p-4 border border-border">
           <p className="text-sm text-muted-foreground">Active Users</p>
-          <p className="text-2xl font-bold text-foreground mt-1">4</p>
+          <p className="text-2xl font-bold text-foreground mt-1">
+            {statsLoading ? (
+              <Skeleton className="h-8 w-12" />
+            ) : statsError ? (
+              '--'
+            ) : (
+              stats!.activeUsers
+            )}
+          </p>
         </div>
       </div>
 

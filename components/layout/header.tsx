@@ -21,6 +21,14 @@ export function Header() {
     router.push('/login')
   }
 
+  const handleGlobalSearch = (query: string): void => {
+    // TODO: implement global search
+  }
+
+  const handleViewProfile = (): void => {
+    // TODO: navigate to profile page
+  }
+
   const getInitials = (name?: string) => {
     return (name || '')
       .split(' ')
@@ -48,6 +56,7 @@ export function Header() {
         <Input
           placeholder="Search items, branches..."
           className="pl-10 bg-background border-border"
+          onChange={(e) => handleGlobalSearch(e.target.value)}
         />
       </div>
 
@@ -74,7 +83,7 @@ export function Header() {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
+            <DropdownMenuItem className="flex items-center gap-2 cursor-pointer" onClick={handleViewProfile}>
               <User className="w-4 h-4" />
               <span>Profile</span>
             </DropdownMenuItem>

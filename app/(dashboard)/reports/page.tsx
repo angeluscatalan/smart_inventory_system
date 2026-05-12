@@ -14,9 +14,11 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { mockInventoryItems, mockBranches } from '@/lib/mock-data'
 import { useAuth } from '@/lib/auth-context'
 import { canViewReportPreview, canAccessAllBranches, canAccessPage } from '@/lib/permissions'
+import type { InventoryItem, Branch, ReportFilters } from '@/lib/types'
+import { fetchInventoryItems } from '@/lib/api/inventory'
+import { fetchBranches } from '@/lib/api/branches'
 
 export default function ReportsPage() {
   const { user } = useAuth()
@@ -35,11 +37,23 @@ export default function ReportsPage() {
 
   const [reportType, setReportType] = useState('inventory')
   const [selectedBranch, setSelectedBranch] = useState(isAdmin ? 'all' : (user?.branch || ''))
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
+  const [branches, setBranches] = useState<Branch[]>([])
+
+  useEffect(() => {
+    fetchInventoryItems().then(setInventoryItems)
+  }, [])
+
+  useEffect(() => {
+    fetchBranches().then(setBranches)
+  }, [])
 
   // Filter items based on branch scope
   const filteredItems = isAdmin && selectedBranch === 'all'
-    ? mockInventoryItems
-    : mockInventoryItems.filter((item) => item.branch === (isAdmin ? selectedBranch : user?.branch))
+    ? inventoryItems
+    : inventoryItems.filter((item) => item.branch === (isAdmin ? selectedBranch : user?.branch))
 
   // Calculate some report metrics
   const totalValue = filteredItems.reduce((sum, item) => sum + (item.quantity * item.price), 0)
@@ -52,6 +66,14 @@ export default function ReportsPage() {
 
   const formatPeso = (value: number) => {
     return `₱${value.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  }
+
+  function handleGenerateReport(filters: ReportFilters): void {
+    // TODO: call report generation API
+  }
+
+  function handleExportReport(filters: ReportFilters): void {
+    // TODO: call export API and trigger file download
   }
 
   return (
@@ -97,7 +119,7 @@ export default function ReportsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Branches</SelectItem>
-                    {mockBranches.map(branch => (
+                    {branches.map(branch => (
                       <SelectItem key={branch.id} value={branch.name}>
                         {branch.name}
                       </SelectItem>
@@ -111,21 +133,44 @@ export default function ReportsPage() {
 
             <div>
               <label className="text-sm font-medium block mb-2">Start Date</label>
-              <Input type="date" />
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
             </div>
 
             <div>
               <label className="text-sm font-medium block mb-2">End Date</label>
-              <Input type="date" />
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
             </div>
           </div>
 
           <div className="flex gap-2 mt-4">
-            <Button>
+            <Button
+              onClick={() => handleGenerateReport({
+                dateFrom: startDate,
+                dateTo: endDate,
+                branchId: selectedBranch === 'all' ? null : selectedBranch,
+                reportType: reportType as ReportFilters['reportType'],
+              })}
+            >
               <Filter className="w-4 h-4 mr-2" />
               Generate Report
             </Button>
-            <Button variant="outline">
+            <Button
+              variant="outline"
+              onClick={() => handleExportReport({
+                dateFrom: startDate,
+                dateTo: endDate,
+                branchId: selectedBranch === 'all' ? null : selectedBranch,
+                reportType: reportType as ReportFilters['reportType'],
+              })}
+            >
               <Download className="w-4 h-4 mr-2" />
               Export to Excel
             </Button>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Filter } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -12,12 +12,16 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { AlertList } from '@/components/notifications/alert-list'
-import { mockAlerts } from '@/lib/mock-data'
+import { fetchAlerts } from '@/lib/api/alerts'
 import { useAuth } from '@/lib/auth-context'
+import type { Alert } from '@/lib/types'
 
 export default function NotificationsPage() {
   const { user } = useAuth()
   const router = useRouter()
+  const [alerts, setAlerts] = useState<Alert[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(false)
 
   useEffect(() => {
     if (user && user.role !== 'admin') {
@@ -25,11 +29,33 @@ export default function NotificationsPage() {
     }
   }, [user, router])
 
+  useEffect(() => {
+    async function loadAlerts() {
+      setIsLoading(true)
+      setError(false)
+      try {
+        const data = await fetchAlerts()
+        setAlerts(data)
+      } catch {
+        setError(true)
+        // silently keep the empty array
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadAlerts()
+  }, [])
+
   if (!user || user.role !== 'admin') return null
 
-  const criticalCount = mockAlerts.filter(a => a.severity === 'critical').length
-  const warningCount = mockAlerts.filter(a => a.severity === 'warning').length
-  const infoCount = mockAlerts.filter(a => a.severity === 'info').length
+  function handleOpenNotificationFilters(): void {
+    // TODO: open advanced filter panel
+  }
+
+  const criticalCount = alerts.filter(a => a.severity === 'critical').length
+  const warningCount = alerts.filter(a => a.severity === 'warning').length
+  const infoCount = alerts.filter(a => a.severity === 'info').length
 
   return (
     <div className="space-y-6">
@@ -81,14 +107,14 @@ export default function NotificationsPage() {
           </SelectContent>
         </Select>
 
-        <Button variant="outline">
+        <Button variant="outline" onClick={handleOpenNotificationFilters}>
           <Filter className="w-4 h-4 mr-2" />
           More Filters
         </Button>
       </div>
 
       {/* Alert List */}
-      <AlertList alerts={mockAlerts} />
+      <AlertList alerts={alerts} />
     </div>
   )
 }

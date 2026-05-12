@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserRole } from './types';
+import { DEMO_CREDENTIALS } from './demo-accounts';
 
 export interface AuthUser {
   username: string;
@@ -17,16 +18,6 @@ interface AuthContextType {
   logout: () => void;
   isLoading: boolean;
 }
-
-const CREDENTIALS: Record<string, { password: string; fullName: string; role: UserRole; branch: string }> = {
-  admin: { password: 'password123', fullName: 'Administrator', role: 'admin', branch: 'all' },
-  manila_manager: { password: 'manila2024', fullName: 'Maria Santos', role: 'branch-manager', branch: 'Manila Branch' },
-  cebu_manager: { password: 'cebu2024', fullName: 'Juan Dela Cruz', role: 'branch-manager', branch: 'Cebu Branch' },
-  davao_manager: { password: 'davao2024', fullName: 'Rosa Garcia', role: 'branch-manager', branch: 'Davao Branch' },
-  manila_staff: { password: 'staff123', fullName: 'Anna Lopez', role: 'staff', branch: 'Manila Branch' },
-  cebu_staff: { password: 'staff123', fullName: 'Miguel Rodriguez', role: 'staff', branch: 'Cebu Branch' },
-  davao_staff: { password: 'staff123', fullName: 'Christine Reyes', role: 'staff', branch: 'Davao Branch' },
-};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -56,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    const cred = CREDENTIALS[username];
+    const cred = DEMO_CREDENTIALS[username];
     if (cred && cred.password === password) {
       const userData: AuthUser = {
         username,

@@ -68,3 +68,66 @@ export interface Alert {
   timestamp: Date
   read: boolean
 }
+
+// ─── Payload types (data submitted to the API) ───────────────────────────────
+
+export interface StockAdjustmentPayload {
+  itemId: string
+  quantity: number
+  adjustmentType: 'add' | 'remove' | 'correction'
+  reason: string
+  fromBranch?: string
+  toBranch?: string
+}
+
+// ─── Filter types (query / filter parameters) ────────────────────────────────
+
+export interface InventoryFilters {
+  searchQuery?: string
+  branchId?: string | null
+  status?: InventoryItem['status'] | 'all'
+}
+
+export interface AlertFilters {
+  type?: Alert['type'] | 'all'
+  severity?: Alert['severity'] | 'all'
+}
+
+export interface ActivityFilters {
+  searchUser?: string
+  action?: string | 'all'
+}
+
+export interface ReportFilters {
+  dateFrom: string
+  dateTo: string
+  branchId: string | null
+  reportType?: 'inventory' | 'movement' | 'expiring' | 'branch'
+}
+
+// ─── API return types ─────────────────────────────────────────────────────────
+
+export interface AuditLogStats {
+  last24Hours: number
+  lastWeek: number
+  activeUsers: number
+}
+
+export interface InventoryByBranchDataPoint {
+  branch: string
+  items: number
+  value: number
+}
+
+export interface StockMovementDataPoint {
+  week: string
+  inbound: number
+  outbound: number
+  net: number
+}
+
+export interface ExpirationTimelineDataPoint {
+  period: string
+  count: number
+  critical: number
+}

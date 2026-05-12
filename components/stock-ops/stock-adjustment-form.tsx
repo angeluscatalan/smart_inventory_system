@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,12 +12,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { mockInventoryItems, mockBranches } from '@/lib/mock-data'
+import type { InventoryItem, Branch, StockAdjustmentPayload } from '@/lib/types'
+import { fetchInventoryItems } from '@/lib/api/inventory'
+import { fetchBranches } from '@/lib/api/branches'
 import { useAuth } from '@/lib/auth-context'
 import { canTransferStock as checkCanTransfer, canAccessAllBranches } from '@/lib/permissions'
 
 interface StockAdjustmentFormProps {
-  onSubmit?: (data: any) => void
+  onSubmit?: (payload: StockAdjustmentPayload) => void
 }
 
 export function StockAdjustmentForm({ onSubmit }: StockAdjustmentFormProps) {
@@ -25,8 +27,19 @@ export function StockAdjustmentForm({ onSubmit }: StockAdjustmentFormProps) {
   const userCanTransfer = user?.role ? checkCanTransfer(user.role) : false
   const isAdmin = user?.role ? canAccessAllBranches(user.role) : false
 
-  const [adjustmentType, setAdjustmentType] = useState<'add' | 'remove' | 'transfer'>('add')
-  const [selectedItem, setSelectedItem] = useState('')
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([])
+  const [branches, setBranches] = useState<Branch[]>([])
+
+  useEffect(() => {
+    fetchInventoryItems().then(setInventoryItems)
+  }, [])
+
+  useEffect(() => {
+    fetchBranches().then(setBranches)
+  }, [])
+
+  const [adjustmentType, setAdjustmentType] = useState<'add' | 'remove' | 'correction'>('add')
+  const [itemId, setItemId] = useState('')
   const [quantity, setQuantity] = useState('')
   const [fromBranch, setFromBranch] = useState(isAdmin ? '' : (user?.branch || ''))
   const [toBranch, setToBranch] = useState('')
@@ -34,37 +47,34 @@ export function StockAdjustmentForm({ onSubmit }: StockAdjustmentFormProps) {
 
   // Filter items based on user branch
   const availableItems = isAdmin
-    ? mockInventoryItems
-    : mockInventoryItems.filter((item) => item.branch === user?.branch)
+    ? inventoryItems
+    : inventoryItems.filter((item) => item.branch === user?.branch)
 
   const adjustmentTypes = userCanTransfer
-    ? (['add', 'remove', 'transfer'] as const)
+    ? (['add', 'remove', 'correction'] as const)
     : (['add', 'remove'] as const)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!selectedItem || !quantity || !reason) {
-      alert('Please fill in all required fields')
+    if (!itemId || !quantity || !reason) {
       return
     }
 
-    if (adjustmentType === 'transfer' && (!fromBranch || !toBranch)) {
-      alert('Please select both source and destination branches')
+    if (adjustmentType === 'correction' && (!fromBranch || !toBranch)) {
       return
     }
 
-    if (adjustmentType !== 'transfer' && !fromBranch) {
-      alert('Please select a branch')
+    if (adjustmentType !== 'correction' && !fromBranch) {
       return
     }
 
-    const formData = {
+    const formData: StockAdjustmentPayload = {
       adjustmentType,
-      selectedItem,
+      itemId,
       quantity: parseInt(quantity),
-      fromBranch: adjustmentType === 'transfer' ? fromBranch : fromBranch,
-      toBranch: adjustmentType === 'transfer' ? toBranch : undefined,
+      fromBranch: fromBranch || undefined,
+      toBranch: adjustmentType === 'correction' ? toBranch : undefined,
       reason,
     }
 
@@ -74,7 +84,7 @@ export function StockAdjustmentForm({ onSubmit }: StockAdjustmentFormProps) {
 
   const resetForm = () => {
     setAdjustmentType('add')
-    setSelectedItem('')
+    setItemId('')
     setQuantity('')
     setFromBranch(isAdmin ? '' : (user?.branch || ''))
     setToBranch('')
@@ -116,7 +126,7 @@ export function StockAdjustmentForm({ onSubmit }: StockAdjustmentFormProps) {
           {/* Item Selection */}
           <div>
             <label className="text-sm font-medium block mb-2">Select Item *</label>
-            <Select value={selectedItem} onValueChange={setSelectedItem}>
+            <Select value={itemId} onValueChange={setItemId}>
               <SelectTrigger>
                 <SelectValue placeholder="Choose an item..." />
               </SelectTrigger>
@@ -143,7 +153,7 @@ export function StockAdjustmentForm({ onSubmit }: StockAdjustmentFormProps) {
           </div>
 
           {/* Branch Selection - Only for admin */}
-          {adjustmentType !== 'transfer' && (
+          {adjustmentType !== 'correction' && (
             <div>
               <label className="text-sm font-medium block mb-2">Branch *</label>
               {isAdmin ? (
@@ -152,7 +162,7 @@ export function StockAdjustmentForm({ onSubmit }: StockAdjustmentFormProps) {
                     <SelectValue placeholder="Select branch..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {mockBranches.map((branch) => (
+                    {branches.map((branch) => (
                       <SelectItem key={branch.id} value={branch.name}>
                         {branch.name}
                       </SelectItem>
@@ -166,7 +176,7 @@ export function StockAdjustmentForm({ onSubmit }: StockAdjustmentFormProps) {
           )}
 
           {/* Transfer Branches */}
-          {adjustmentType === 'transfer' && (
+          {adjustmentType === 'correction' && (
             <>
               <div>
                 <label className="text-sm font-medium block mb-2">From Branch *</label>
@@ -176,7 +186,7 @@ export function StockAdjustmentForm({ onSubmit }: StockAdjustmentFormProps) {
                       <SelectValue placeholder="Select source branch..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {mockBranches.map((branch) => (
+                      {branches.map((branch) => (
                         <SelectItem key={branch.id} value={branch.name}>
                           {branch.name}
                         </SelectItem>
@@ -194,7 +204,7 @@ export function StockAdjustmentForm({ onSubmit }: StockAdjustmentFormProps) {
                     <SelectValue placeholder="Select destination branch..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {mockBranches
+                    {branches
                       .filter((branch) => branch.name !== (isAdmin ? fromBranch : user?.branch))
                       .map((branch) => (
                         <SelectItem key={branch.id} value={branch.name}>

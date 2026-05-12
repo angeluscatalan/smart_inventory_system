@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SearchFilterBar } from '@/components/inventory/search-filter-bar'
 import { InventoryTable } from '@/components/inventory/inventory-table'
-import { mockInventoryItems } from '@/lib/mock-data'
+import { fetchInventoryItems } from '@/lib/api/inventory'
 import { useAuth } from '@/lib/auth-context'
 import { canAccessAllBranches } from '@/lib/permissions'
+import type { InventoryItem } from '@/lib/types'
 
 export default function InventoryPage() {
   const { user } = useAuth()
@@ -16,11 +17,38 @@ export default function InventoryPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedBranch, setSelectedBranch] = useState('all')
   const [selectedStatus, setSelectedStatus] = useState('all')
+  const [items, setItems] = useState<InventoryItem[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(false)
+
+  useEffect(() => {
+    setIsLoading(true)
+    setError(false)
+    fetchInventoryItems()
+      .then((data) => {
+        setItems(data)
+      })
+      .catch(() => {
+        setError(true)
+        setItems([])
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
+  }, [])
+
+  function handleAddItem(): void {
+    // TODO: open add-item modal or navigate to add-item form
+  }
+
+  function handleExportInventory(): void {
+    // TODO: call export API and trigger file download
+  }
 
   // Non-admin users only see their branch items
   const branchFilteredItems = isAdmin
-    ? mockInventoryItems
-    : mockInventoryItems.filter((item) => item.branch === user?.branch)
+    ? items
+    : items.filter((item) => item.branch === user?.branch)
 
   return (
     <div className="space-y-6">
@@ -35,11 +63,11 @@ export default function InventoryPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleExportInventory}>
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
-          <Button size="sm">
+          <Button size="sm" onClick={handleAddItem}>
             <Plus className="w-4 h-4 mr-2" />
             Add Item
           </Button>

@@ -11,6 +11,14 @@ interface BranchTableProps {
 }
 
 export function BranchTable({ branches }: BranchTableProps) {
+  function handleEditBranch(branchId: string): void {
+    // TODO: open edit-branch modal
+  }
+
+  function handleDeleteBranch(branchId: string): void {
+    // TODO: call delete API with confirmation
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -66,10 +74,10 @@ export function BranchTable({ branches }: BranchTableProps) {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => handleEditBranch(branch.id)}>
                         <Edit2 className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDeleteBranch(branch.id)}>
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>

@@ -6,42 +6,8 @@ import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { AlertCircle, Shield, Building2, UserCheck } from 'lucide-react';
-
-interface DemoAccount {
-  label: string;
-  username: string;
-  password: string;
-  subtitle: string;
-}
-
-const demoAccounts: { title: string; icon: React.ComponentType<{ className?: string }>; accounts: DemoAccount[] }[] = [
-  {
-    title: 'Administrator',
-    icon: Shield,
-    accounts: [
-      { label: 'Admin', username: 'admin', password: 'password123', subtitle: 'Full access' },
-    ],
-  },
-  {
-    title: 'Branch Managers',
-    icon: Building2,
-    accounts: [
-      { label: 'Maria Santos', username: 'manila_manager', password: 'manila2024', subtitle: 'Manila Branch' },
-      { label: 'Juan Dela Cruz', username: 'cebu_manager', password: 'cebu2024', subtitle: 'Cebu Branch' },
-      { label: 'Rosa Garcia', username: 'davao_manager', password: 'davao2024', subtitle: 'Davao Branch' },
-    ],
-  },
-  {
-    title: 'Staff',
-    icon: UserCheck,
-    accounts: [
-      { label: 'Anna Lopez', username: 'manila_staff', password: 'staff123', subtitle: 'Manila Branch' },
-      { label: 'Miguel Rodriguez', username: 'cebu_staff', password: 'staff123', subtitle: 'Cebu Branch' },
-      { label: 'Christine Reyes', username: 'davao_staff', password: 'staff123', subtitle: 'Davao Branch' },
-    ],
-  },
-];
+import { AlertCircle } from 'lucide-react';
+import { DEMO_ACCOUNT_GROUPS, type DemoAccountGroup } from '@/lib/demo-accounts';
 
 export function LoginForm() {
   const [username, setUsername] = useState('');
@@ -148,9 +114,12 @@ export function LoginForm() {
         {/* Demo Accounts Panel */}
         <Card className="border border-border shadow-lg">
           <div className="p-6">
-            <h2 className="text-lg font-bold text-foreground mb-4">Demo Accounts</h2>
+            <div className="flex items-center gap-2 mb-4">
+              <h2 className="text-lg font-bold text-foreground">Demo Accounts</h2>
+              <span className="text-xs font-medium text-destructive">Development Only</span>
+            </div>
             <div className="space-y-5">
-              {demoAccounts.map((group) => {
+              {DEMO_ACCOUNT_GROUPS.map((group: DemoAccountGroup) => {
                 const GroupIcon = group.icon;
                 return (
                   <div key={group.title}>

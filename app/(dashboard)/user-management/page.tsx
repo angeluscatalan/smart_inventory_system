@@ -1,13 +1,14 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Edit2, Trash2, Mail, LogIn } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { mockUsers } from '@/lib/mock-data'
 import { useAuth } from '@/lib/auth-context'
+import { fetchUsers } from '@/lib/api/users'
+import type { User } from '@/lib/types'
 
 const roleConfig = {
   admin: { label: 'Admin', color: 'bg-primary/10 text-primary' },
@@ -18,12 +19,29 @@ const roleConfig = {
 export default function UserManagementPage() {
   const { user } = useAuth()
   const router = useRouter()
+  const [users, setUsers] = useState<User[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(false)
 
   useEffect(() => {
     if (user && user.role !== 'admin') {
       router.push('/')
     }
   }, [user, router])
+
+  useEffect(() => {
+    setIsLoading(true)
+    fetchUsers()
+      .then((data) => {
+        setUsers(data)
+      })
+      .catch(() => {
+        setError(true)
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
+  }, [])
 
   if (!user || user.role !== 'admin') return null
 
@@ -36,8 +54,21 @@ export default function UserManagementPage() {
     })
   }
 
-  const activeUsers = mockUsers.filter(u => u.status === 'active').length
-  const inactiveUsers = mockUsers.filter(u => u.status === 'inactive').length
+  const totalUsers = users.length
+  const activeUsers = users.filter(u => u.status === 'active').length
+  const inactiveUsers = users.filter(u => u.status === 'inactive').length
+
+  function handleAddUser() {
+    // TODO: open add-user modal
+  }
+
+  function handleEditUser(userId: string) {
+    // TODO: open edit-user modal
+  }
+
+  function handleDeleteUser(userId: string) {
+    // TODO: call delete API with confirmation
+  }
 
   return (
     <div className="space-y-6">
@@ -47,7 +78,7 @@ export default function UserManagementPage() {
           <h1 className="text-3xl font-bold text-foreground">User Management</h1>
           <p className="text-muted-foreground mt-1">Manage system users and permissions</p>
         </div>
-        <Button size="sm">
+        <Button size="sm" onClick={handleAddUser}>
           <Plus className="w-4 h-4 mr-2" />
           Add User
         </Button>
@@ -57,7 +88,7 @@ export default function UserManagementPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-card rounded-lg p-6 border border-border">
           <p className="text-sm font-medium text-muted-foreground">Total Users</p>
-          <p className="text-3xl font-bold text-foreground mt-2">{mockUsers.length}</p>
+          <p className="text-3xl font-bold text-foreground mt-2">{totalUsers}</p>
         </div>
         <div className="bg-card rounded-lg p-6 border border-border">
           <p className="text-sm font-medium text-muted-foreground">Active Users</p>
@@ -90,22 +121,22 @@ export default function UserManagementPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockUsers.map((user) => {
-                  const role = roleConfig[user.role]
+                {users.map((member) => {
+                  const role = roleConfig[member.role]
                   return (
-                    <TableRow key={user.id}>
+                    <TableRow key={member.id}>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium">
-                            {user.name.split(' ').map(n => n[0]).join('')}
+                            {member.name.split(' ').map(n => n[0]).join('')}
                           </div>
-                          {user.name}
+                          {member.name}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2 text-sm">
                           <Mail className="w-4 h-4 text-muted-foreground" />
-                          {user.email}
+                          {member.email}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -113,25 +144,25 @@ export default function UserManagementPage() {
                           {role.label}
                         </span>
                       </TableCell>
-                      <TableCell className="text-sm">{user.assignedBranch}</TableCell>
+                      <TableCell className="text-sm">{member.assignedBranch}</TableCell>
                       <TableCell>
-                        <span className={`status-badge ${user.status === 'active' ? 'status-normal' : 'status-inactive'
+                        <span className={`status-badge ${member.status === 'active' ? 'status-normal' : 'status-inactive'
                           }`}>
-                          {user.status === 'active' ? 'Active' : 'Inactive'}
+                          {member.status === 'active' ? 'Active' : 'Inactive'}
                         </span>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <LogIn className="w-4 h-4" />
-                          {formatDate(user.lastLogin)}
+                          {formatDate(member.lastLogin)}
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" onClick={() => handleEditUser(member.id)}>
                             <Edit2 className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDeleteUser(member.id)}>
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
