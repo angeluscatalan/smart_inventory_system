@@ -48,7 +48,7 @@ export function Sidebar() {
     <div className="dashboard-sidebar">
       {/* Logo */}
       <div className="p-6 border-b border-sidebar-border">
-        <h1 className="text-xl font-bold text-sidebar-foreground">InvSys PH</h1>
+        <h1 className="text-xl font-bold text-sidebar-foreground">IntelliShelf</h1>
         <p className="text-xs text-sidebar-foreground/60 mt-1">Smart Inventory System</p>
       </div>
 

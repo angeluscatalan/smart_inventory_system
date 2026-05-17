@@ -40,7 +40,7 @@ export function LoginForm() {
         <Card className="border border-border shadow-lg">
           <div className="p-8">
             <div className="mb-8">
-              <p className="text-muted-foreground">InvSys PH - Smart Inventory System</p>
+              <p className="text-muted-foreground">IntelliShelf - Smart Inventory System</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
