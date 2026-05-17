@@ -10,11 +10,14 @@ import { useAuth } from '@/lib/auth-context'
 import { fetchUsers } from '@/lib/api/users'
 import type { User } from '@/lib/types'
 
-const roleConfig = {
+const roleConfig: Record<string, { label: string; color: string }> = {
   admin: { label: 'Admin', color: 'bg-primary/10 text-primary' },
   'branch-manager': { label: 'Branch Manager', color: 'bg-blue-50 text-blue-700' },
+  branch_manager: { label: 'Branch Manager', color: 'bg-blue-50 text-blue-700' },
   staff: { label: 'Staff', color: 'bg-gray-50 text-gray-700' },
 }
+
+const defaultRoleStyle = { label: 'Unknown', color: 'bg-gray-50 text-gray-700' }
 
 export default function UserManagementPage() {
   const { user } = useAuth()
@@ -122,7 +125,7 @@ export default function UserManagementPage() {
               </TableHeader>
               <TableBody>
                 {users.map((member) => {
-                  const role = roleConfig[member.role]
+                  const role = roleConfig[member.role] ?? defaultRoleStyle
                   return (
                     <TableRow key={member.id}>
                       <TableCell className="font-medium">
