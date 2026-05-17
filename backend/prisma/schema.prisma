@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  admin
+  branch_manager
+  staff
+}
+
+enum ItemStatus {
+  normal
+  low_stock
+  expiring
+  expired
+}
+
+enum BranchStatus {
+  active
+  inactive
+}
+
+enum UserStatus {
+  active
+  inactive
+}
+
+enum AdjustmentType {
+  add
+  remove
+  transfer
+}
+
+enum AlertType {
+  low_stock
+  expiring
+  expired
+  system
+}
+
+enum AlertSeverity {
+  info
+  warning
+  critical
+}
+
+model InventoryItem {
+  id            String      @id @default(cuid())
+  name          String
+  sku           String      @unique
+  quantity      Int
+  price         Float
+  reorderLevel  Int
+  expiryDate    DateTime
+  supplier      String
+  branch        String
+  status        ItemStatus
+  lastRestocked DateTime
+
+  stockAdjustments StockAdjustment[]
+}
+
+model Branch {
+  id      String       @id @default(cuid())
+  name    String       @unique
+  address String
+  city    String
+  manager String
+  contact String
+  email   String
+  status  BranchStatus
+}
+
+model User {
+  id             String     @id @default(cuid())
+  name           String
+  email          String     @unique
+  username       String     @unique
+  passwordHash   String
+  role           UserRole
+  assignedBranch String
+  status         UserStatus
+  lastLogin      DateTime?
+
+  activities Activity[]
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String
+  item      String?
+  branch    String
+  timestamp DateTime @default(now())
+  details   String?
+}
+
+model StockAdjustment {
+  id          String         @id @default(cuid())
+  itemId      String
+  item        InventoryItem  @relation(fields: [itemId], references: [id])
+  itemName    String
+  type        AdjustmentType
+  quantity    Int
+  fromBranch  String?
+  toBranch    String?
+  reason      String
+  user        String
+  timestamp   DateTime       @default(now())
+}
+
+model Alert {
+  id        String        @id @default(cuid())
+  type      AlertType
+  item      String?
+  branch    String?
+  message   String
+  severity  AlertSeverity
+  timestamp DateTime      @default(now())
+  read      Boolean       @default(false)
+}
